@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espresso Thy Self — Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── Reset & Variables ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #d2cdca;
+      --surface: #FFFFFF;
+      --surface-hover: #f5f2f0;
+      --text: #4a5060;
+      --text-muted: #929fb0;
+      --accent: #926e5a;
+      --accent-light: #b08d79;
+      --border: #c4bfbc;
+      --shadow: 0 2px 16px rgba(91, 75, 72, 0.1);
+      --shadow-hover: 0 4px 24px rgba(91, 75, 72, 0.18);
+      --radius: 16px;
+      --chart-line: #926e5a;
+      --chart-fill-top: rgba(146, 110, 90, 0.3);
+      --chart-fill-bottom: rgba(146, 110, 90, 0.02);
+      --chart-bar: #926e5a;
+      --chart-bar-hover: #5b4b48;
+      --chart-grid: rgba(146, 159, 176, 0.15);
+      --chart-text: #929fb0;
+      --toggle-bg: #c4bfbc;
+      --toggle-knob: #FFFFFF;
+      --kpi-icon-bg: rgba(146, 110, 90, 0.12);
+      --kpi-fill: #5b4b48;
+      --cup-color: #4a5060;
+      --cup-sleeve: #929fb0;
+    }
+
+    [data-theme="dark"] {
+      --bg: #363b47;
+      --surface: #4a5060;
+      --surface-hover: #545a6a;
+      --text: #d2cdca;
+      --text-muted: #929fb0;
+      --accent: #b08d79;
+      --accent-light: #d2cdca;
+      --border: #5a6070;
+      --shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+      --shadow-hover: 0 4px 24px rgba(0, 0, 0, 0.45);
+      --chart-line: #b08d79;
+      --chart-fill-top: rgba(176, 141, 121, 0.3);
+      --chart-fill-bottom: rgba(176, 141, 121, 0.02);
+      --chart-bar: #b08d79;
+      --chart-bar-hover: #d2cdca;
+      --chart-grid: rgba(146, 159, 176, 0.15);
+      --chart-text: #929fb0;
+      --toggle-bg: #5a6070;
+      --toggle-knob: #b08d79;
+      --kpi-icon-bg: rgba(176, 141, 121, 0.15);
+      --kpi-fill: #d2cdca;
+      --cup-color: #FFFFFF;
+      --cup-sleeve: rgba(255, 255, 255, 0.5);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      transition: background 0.4s, color 0.4s;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 32px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: #4a5060;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+    }
+
+    .brand h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .brand span {
+      display: block;
+      font-size: 12px;
+      color: #929fb0;
+      font-weight: 400;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ── Toggle ── */
+    .toggle {
+      position: relative;
+      width: 56px;
+      height: 30px;
+      background: var(--toggle-bg);
+      border-radius: 15px;
+      cursor: pointer;
+      border: none;
+      transition: background 0.3s;
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 24px;
+      height: 24px;
+      background: var(--toggle-knob);
+      border-radius: 50%;
+      transition: transform 0.3s ease, background 0.3s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+
+    [data-theme="dark"] .toggle::after {
+      transform: translateX(26px);
+    }
+
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toggle-label {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ── Dashboard Layout ── */
+    .dashboard {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 32px 48px;
+      display: grid;
+      gap: 24px;
+    }
+
+    /* ── KPI Cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.4s, border-color 0.4s;
+      cursor: default;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .kpi-header {
+      margin-bottom: 4px;
+    }
+
+    .kpi-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--kpi-icon-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .kpi-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .kpi-flip {
+      perspective: 600px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .kpi-flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.8s ease;
+    }
+
+    .kpi-flip.flipped .kpi-flip-inner {
+      transform: rotateX(180deg);
+    }
+
+    .kpi-flip-front,
+    .kpi-flip-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backface-visibility: hidden;
+    }
+
+    .kpi-flip-front {
+      z-index: 2;
+    }
+
+    .kpi-flip-front svg {
+      filter: drop-shadow(0 2px 4px rgba(91, 75, 72, 0.3));
+    }
+
+    .kpi-flip-back {
+      transform: rotateX(180deg);
+    }
+
+    .kpi-value {
+      font-size: 44px;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+      color: var(--kpi-fill);
+    }
+
+
+    .kpi-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .kpi-sub .up { color: #4CAF50; }
+    .kpi-sub .down { color: #E57373; }
+
+    /* ── Chart Cards ── */
+    .chart-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      transition: background 0.4s, border-color 0.4s;
+    }
+
+    .chart-card h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .chart-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .chart-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .chart-header-row h2 { margin-bottom: 4px; }
+    .chart-header-row .chart-subtitle { margin-bottom: 0; }
+
+    .time-toggle {
+      display: flex;
+      gap: 4px;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .time-btn {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: #5b4b48;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .time-btn:hover {
+      color: #926e5a;
+    }
+
+    .time-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .chart-wrap.line-chart { height: 280px; }
+    .chart-wrap.bar-chart { height: 280px; }
+
+    /* ── Coffee Cups ── */
+    .cups-row {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 16px;
+      padding-top: 12px;
+    }
+
+    .cup-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.5s ease forwards;
+    }
+
+    .cup-svg-wrap {
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .cup-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.3;
+      max-width: 70px;
+      height: 30px;
+    }
+
+    .cup-pct {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--cup-color);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .chart-row { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .header { padding: 20px 16px; }
+      .dashboard { padding: 0 16px 32px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+      .brand h1 { font-size: 18px; }
+    }
+
+    /* ── Fade-in animation ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.6s ease forwards;
+    }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+    .kpi-card:nth-child(2) { animation-delay: 0.12s; }
+    .kpi-card:nth-child(3) { animation-delay: 0.19s; }
+    .kpi-card:nth-child(4) { animation-delay: 0.26s; }
+    .chart-card { animation-delay: 0.35s; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+      transform: scale(0.9) translateY(20px);
+      transition: transform 0.3s ease;
+      text-align: center;
+    }
+
+    .modal-overlay.open .modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .modal-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .modal-quote {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--kpi-fill);
+      line-height: 1.4;
+      font-style: italic;
+      min-height: 60px;
+    }
+
+    .modal-author {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .modal-close {
+      margin-top: 20px;
+      padding: 8px 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .modal-close:hover {
+      background: var(--bg);
+    }
+
+    .kpi-card:nth-child(4) {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+
+
+  <!-- Header -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></div>
+      <div>
+        <h1>Espresso Thy Self</h1>
+        <span>Analytics Dashboard</span>
+      </div>
+    </div>
+    <div class="toggle-wrap">
+      <span class="toggle-label">&#9728;&#65039;</span>
+      <button class="toggle" id="themeToggle" aria-label="Toggle dark mode"></button>
+      <span class="toggle-label">&#9790;&#65039;</span>
+    </div>
+  </header>
+
+  <!-- Dashboard -->
+  <main class="dashboard">
+
+    <!-- KPI Cards -->
+    <section class="kpi-grid">
+      <div class="kpi-card fade-up">
+        <div class="kpi-header">
+          <div class="kpi-label">Monthly Revenue</div>
+        </div>
+        <div class="kpi-flip" data-delay="400">
+          <div class="kpi-flip-inner">
+            <div class="kpi-flip-front">
+              <svg width="44" height="44" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="35" ry="45" fill="#5b4b48"/><path d="M50 10 Q48 50 50 90" stroke="#3a2f2c" stroke-width="3" fill="none"/></svg>
+            </div>
+            <div class="kpi-flip-back">
+              <div class="kpi-value" data-target="48250" data-prefix="$" data-decimals="0">$0</div>
+            </div>
+          </div>
+        </div>
+        <div class="kpi-sub"><span class="up">&#9650; 12.3%</span> vs last month</div>
+      </div>
+      <div class="kpi-card fade-up">
+        <div class="kpi-header">
+          <div class="kpi-label">Orders Today</div>
+        </div>
+        <div class="kpi-flip" data-delay="600">
+          <div class="kpi-flip-inner">
+            <div class="kpi-flip-front">
+              <svg width="44" height="44" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="35" ry="45" fill="#5b4b48"/><path d="M50 10 Q48 50 50 90" stroke="#3a2f2c" stroke-width="3" fill="none"/></svg>
+            </div>
+            <div class="kpi-flip-back">
+              <div class="kpi-value" data-target="347" data-prefix="" data-decimals="0">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="kpi-sub"><span class="up">&#9650; 8.1%</span> vs avg day</div>
+      </div>
+      <div class="kpi-card fade-up">
+        <div class="kpi-header">
+          <div class="kpi-label">Average Ticket</div>
+        </div>
+        <div class="kpi-flip" data-delay="800">
+          <div class="kpi-flip-inner">
+            <div class="kpi-flip-front">
+              <svg width="44" height="44" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="35" ry="45" fill="#5b4b48"/><path d="M50 10 Q48 50 50 90" stroke="#3a2f2c" stroke-width="3" fill="none"/></svg>
+            </div>
+            <div class="kpi-flip-back">
+              <div class="kpi-value" data-target="6.85" data-prefix="$" data-decimals="2">$0.00</div>
+            </div>
+          </div>
+        </div>
+        <div class="kpi-sub"><span class="up">&#9650; 3.2%</span> vs last month</div>
+      </div>
+      <div class="kpi-card fade-up">
+        <div class="kpi-header">
+          <div class="kpi-label">Customer Rating</div>
+        </div>
+        <div class="kpi-flip" data-delay="1000">
+          <div class="kpi-flip-inner">
+            <div class="kpi-flip-front">
+              <svg width="44" height="44" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="35" ry="45" fill="#5b4b48"/><path d="M50 10 Q48 50 50 90" stroke="#3a2f2c" stroke-width="3" fill="none"/></svg>
+            </div>
+            <div class="kpi-flip-back">
+              <div class="kpi-value" data-target="4.8" data-prefix="" data-decimals="1">0.0</div>
+            </div>
+          </div>
+        </div>
+        <div class="kpi-sub"><span>&#128172;</span> 1,247 reviews</div>
+      </div>
+    </section>
+
+    <!-- Revenue Line Chart -->
+    <div class="chart-card fade-up">
+      <div class="chart-header-row">
+        <div>
+          <h2>Revenue Trend</h2>
+          <p class="chart-subtitle" id="revenueSubtitle">Monthly revenue over the past 12 months</p>
+        </div>
+        <div class="time-toggle">
+          <button class="time-btn" data-range="week">Last Week</button>
+          <button class="time-btn" data-range="month">Last Month</button>
+          <button class="time-btn active" data-range="year">12 Months</button>
+        </div>
+      </div>
+      <div class="chart-wrap line-chart">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Orders by Hour + Donut -->
+    <section class="chart-row">
+      <div class="chart-card fade-up">
+        <h2>Orders by Hour</h2>
+        <p class="chart-subtitle">Average daily order pattern</p>
+        <div class="chart-wrap bar-chart">
+          <canvas id="hourlyChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card fade-up" id="salesByCategory">
+        <h2>Sales by Category</h2>
+        <p class="chart-subtitle">Revenue breakdown</p>
+        <div class="cups-row" id="cupsRow"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Quote Modal -->
+  <div class="modal-overlay" id="quoteModal">
+    <div class="modal">
+      <div class="modal-icon">&#9749;</div>
+      <div class="modal-title">Customer Review</div>
+      <div class="modal-quote" id="quoteText">Loading...</div>
+      <div class="modal-author">— Verified Customer</div>
+      <button class="modal-close" id="modalClose">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Theme Toggle ──
+    const toggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+
+    // Check saved preference
+    if (localStorage.getItem('theme') === 'dark') {
+      html.setAttribute('data-theme', 'dark');
+    }
+
+    toggle.addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateChartColors();
+    });
+
+    // ── Count-Up Animation ──
+    const countUp = (el) => {
+      const target = parseFloat(el.dataset.target);
+      const prefix = el.dataset.prefix || '';
+      const decimals = parseInt(el.dataset.decimals, 10);
+      const duration = 1800;
+      const start = performance.now();
+
+      const tick = (now) => {
+          const elapsed = now - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const current = eased * target;
+
+          if (decimals === 0) {
+            el.textContent = prefix + Math.round(current).toLocaleString();
+          } else {
+            el.textContent = prefix + current.toFixed(decimals);
+          }
+
+          if (progress < 1) requestAnimationFrame(tick);
+        };
+
+        requestAnimationFrame(tick);
+    };
+
+    // ── Bean Flip + Count ──
+    const animateCounters = () => {
+      document.querySelectorAll('.kpi-flip').forEach(flip => {
+        const delay = parseInt(flip.dataset.delay, 10);
+        setTimeout(() => {
+          flip.classList.add('flipped');
+          // Start counting after flip completes (0.8s transition)
+          setTimeout(() => {
+            const el = flip.querySelector('.kpi-value');
+            if (el) countUp(el);
+          }, 800);
+        }, delay);
+      });
+    };
+
+    // ── Realistic Sample Data ──
+    const revenueRanges = {
+      year: {
+        labels: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+        data: [38200, 36800, 35100, 33400, 32900, 34600, 37800, 40500, 43200, 46800, 44100, 48250],
+        subtitle: 'Monthly revenue over the past 12 months'
+      },
+      month: {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+        data: [11200, 12450, 11800, 12800],
+        subtitle: 'Weekly revenue for February'
+      },
+      week: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        data: [1580, 1720, 1650, 1890, 2240, 2680, 1940],
+        subtitle: 'Daily revenue for this week'
+      }
+    };
+    let currentRange = 'year';
+    const months = revenueRanges.year.labels;
+    const revenueData = revenueRanges.year.data;
+
+    // Classic coffee shop pattern: early rush 6-10, lull, afternoon 2-4, evening taper
+    const hours = ['5a','6a','7a','8a','9a','10a','11a','12p','1p','2p','3p','4p','5p','6p','7p','8p'];
+    const hourlyData = [8, 22, 45, 62, 58, 41, 28, 32, 26, 35, 38, 29, 18, 12, 8, 5];
+
+    const categories = ['Espresso Drinks', 'Drip Coffee', 'Cold Brew', 'Pastries', 'Merchandise'];
+    const categoryData = [42, 18, 16, 18, 6];
+    const categoryColors = ['#926e5a', '#5b4b48', '#929fb0', '#4a5060', '#b08d79'];
+    const categoryColorsDark = ['#b08d79', '#926e5a', '#929fb0', '#FFFFFF', '#7a8090'];
+
+    // ── Helper: get CSS variable ──
+    const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+    // ── Coffee Cups ──
+    const buildCups = () => {
+      const row = document.getElementById('cupsRow');
+      row.innerHTML = '';
+      const maxPct = Math.max(...categoryData);
+      const maxH = 160;
+      const maxW = 72;
+
+      categories.forEach((name, i) => {
+        const pct = categoryData[i];
+        const scale = Math.max(0.25, pct / maxPct);
+        const offsetY = 84 * (1 - scale);
+        const offsetX = 30 * (1 - scale);
+
+        const item = document.createElement('div');
+        item.className = 'cup-item';
+        item.style.animationDelay = `${0.35 + i * 0.1}s`;
+
+        item.innerHTML = `
+          <span class="cup-pct">${pct}%</span>
+          <div class="cup-svg-wrap">
+            <svg width="72" height="160" viewBox="0 0 60 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(${offsetX}, ${offsetY}) scale(${scale})">
+                <rect x="17" y="0" width="26" height="8" rx="3" fill="${cssVar('--cup-color')}"/>
+                <rect x="5" y="7" width="50" height="8" rx="2" fill="${cssVar('--cup-color')}"/>
+                <path d="M8 16 L52 16 L46 84 L14 84 Z" fill="${cssVar('--cup-color')}"/>
+                <path d="M18 40 L42 40 L40 60 L20 60 Z" fill="${cssVar('--cup-sleeve')}" opacity="0.5"/>
+              </g>
+            </svg>
+          </div>
+          <span class="cup-label">${name}</span>
+        `;
+        row.appendChild(item);
+      });
+    };
+
+    // ── Charts ──
+    let revenueChart, hourlyChart;
+
+    const createCharts = () => {
+      const isDark = html.getAttribute('data-theme') === 'dark';
+
+      // Revenue Line Chart
+      const revCtx = document.getElementById('revenueChart').getContext('2d');
+      const gradient = revCtx.createLinearGradient(0, 0, 0, 280);
+      gradient.addColorStop(0, cssVar('--chart-fill-top'));
+      gradient.addColorStop(1, cssVar('--chart-fill-bottom'));
+
+      revenueChart = new Chart(revCtx, {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [{
+            data: revenueData,
+            borderColor: cssVar('--chart-line'),
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.4,
+            borderWidth: 3,
+            pointRadius: 4,
+            pointBackgroundColor: cssVar('--chart-line'),
+            pointBorderColor: cssVar('--surface'),
+            pointBorderWidth: 2,
+            pointHoverRadius: 7
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: isDark ? '#5b4b48' : '#4a5060',
+              titleColor: '#F5E6D3',
+              bodyColor: '#F5E6D3',
+              padding: 12,
+              cornerRadius: 8,
+              displayColors: false,
+              callbacks: {
+                label: (ctx) => '$' + ctx.parsed.y.toLocaleString()
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: cssVar('--chart-text'), font: { size: 12 } }
+            },
+            y: {
+              grid: { color: cssVar('--chart-grid') },
+              ticks: {
+                color: cssVar('--chart-text'),
+                font: { size: 12 },
+                callback: (v) => '$' + (v / 1000) + 'k'
+              },
+              border: { display: false }
+            }
+          },
+          animation: { duration: 1200, easing: 'easeOutQuart' }
+        }
+      });
+
+      // Hourly Bar Chart
+      const barCtx = document.getElementById('hourlyChart').getContext('2d');
+      hourlyChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: hours,
+          datasets: [{
+            data: hourlyData,
+            backgroundColor: hourlyData.map((v) =>
+              v >= 50 ? cssVar('--chart-bar') : cssVar('--chart-bar') + '99'
+            ),
+            hoverBackgroundColor: cssVar('--chart-bar-hover'),
+            borderRadius: 6,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: isDark ? '#5b4b48' : '#4a5060',
+              titleColor: '#F5E6D3',
+              bodyColor: '#F5E6D3',
+              padding: 12,
+              cornerRadius: 8,
+              displayColors: false,
+              callbacks: {
+                label: (ctx) => ctx.parsed.y + ' orders'
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: cssVar('--chart-text'), font: { size: 11 } }
+            },
+            y: {
+              grid: { color: cssVar('--chart-grid') },
+              ticks: { color: cssVar('--chart-text'), font: { size: 12 } },
+              border: { display: false }
+            }
+          },
+          animation: { duration: 1000, easing: 'easeOutQuart', delay: (ctx) => ctx.dataIndex * 50 }
+        }
+      });
+
+    };
+
+    const updateChartColors = () => {
+      if (revenueChart) revenueChart.destroy();
+      if (hourlyChart) hourlyChart.destroy();
+      createCharts();
+      buildCups();
+    };
+
+    // ── Revenue Range Toggle ──
+    const updateRevenueChart = (range) => {
+      currentRange = range;
+      const r = revenueRanges[range];
+      document.getElementById('revenueSubtitle').textContent = r.subtitle;
+      document.querySelectorAll('.time-btn').forEach(b => b.classList.toggle('active', b.dataset.range === range));
+      revenueChart.data.labels = r.labels;
+      revenueChart.data.datasets[0].data = r.data;
+      revenueChart.update();
+    };
+
+    document.querySelectorAll('.time-btn').forEach(btn => {
+      btn.addEventListener('click', () => updateRevenueChart(btn.dataset.range));
+    });
+
+    // ── Quote Modal ──
+    const modal = document.getElementById('quoteModal');
+    const quoteText = document.getElementById('quoteText');
+    const ratingCard = document.querySelector('.kpi-grid .kpi-card:nth-child(4)');
+
+    ratingCard.addEventListener('click', async () => {
+      modal.classList.add('open');
+      quoteText.textContent = 'Loading...';
+      try {
+        const res = await fetch('https://api.kanye.rest');
+        const data = await res.json();
+        quoteText.textContent = '"' + data.quote + '"';
+      } catch {
+        quoteText.textContent = '"Best espresso this side of anywhere."';
+      }
+    });
+
+    document.getElementById('modalClose').addEventListener('click', () => {
+      modal.classList.remove('open');
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('open');
+    });
+
+    // ── Revenue Card → Scroll to Sales by Category ──
+    const revenueCard = document.querySelector('.kpi-grid .kpi-card:nth-child(1)');
+    revenueCard.style.cursor = 'pointer';
+    revenueCard.addEventListener('click', () => {
+      document.getElementById('salesByCategory').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // ── Init ──
+    createCharts();
+    buildCups();
+    animateCounters();
+  </script>
+</body>
+</html>
