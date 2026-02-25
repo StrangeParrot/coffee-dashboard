@@ -600,7 +600,7 @@
     </section>
 
     <!-- Revenue Line Chart -->
-    <div class="chart-card fade-up">
+    <div class="chart-card fade-up" id="revenueTrend">
       <div class="chart-header-row">
         <div>
           <h2>Revenue Trend</h2>
@@ -619,7 +619,7 @@
 
     <!-- Orders by Hour + Donut -->
     <section class="chart-row">
-      <div class="chart-card fade-up">
+      <div class="chart-card fade-up" id="ordersByHour">
         <h2>Orders by Hour</h2>
         <p class="chart-subtitle">Average daily order pattern</p>
         <div class="chart-wrap bar-chart">
@@ -936,11 +936,17 @@
       if (e.target === modal) modal.classList.remove('open');
     });
 
-    // ── Revenue Card → Scroll to Sales by Category ──
+    // ── KPI Card Click → Scroll ──
     const revenueCard = document.querySelector('.kpi-grid .kpi-card:nth-child(1)');
     revenueCard.style.cursor = 'pointer';
     revenueCard.addEventListener('click', () => {
-      document.getElementById('salesByCategory').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('revenueTrend').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    const ordersCard = document.querySelector('.kpi-grid .kpi-card:nth-child(2)');
+    ordersCard.style.cursor = 'pointer';
+    ordersCard.addEventListener('click', () => {
+      document.getElementById('ordersByHour').scrollIntoView({ behavior: 'smooth' });
     });
 
     // ── Init ──
